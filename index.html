@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Astra - AI Assistant</title>
+
+  <!-- Bootstrap + Lucide Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --sidebar-dark: #1e293b;
+      --primary: #6366f1;
+      --text-light: #f3f4f6;
+      --text-muted: #9ca3af;
+      --card-bg: #1f2937;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 260px;
+      background-color: var(--sidebar-dark);
+      padding: 40px 25px;
+      display: flex;
+      flex-direction: column;
+      gap: 35px;
+      border-right: 1px solid #334155;
+      animation: fadeInLeft 0.6s ease;
+    }
+
+    .sidebar h2 {
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: 0.3s ease;
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+      background-color: var(--primary);
+      color: white;
+      transform: translateX(6px);
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 50px 60px;
+      overflow-y: auto;
+      animation: fadeIn 0.7s ease;
+    }
+
+    .card-box {
+      background-color: var(--card-bg);
+      padding: 40px;
+      border-radius: 18px;
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.3);
+      animation: fadeUp 0.7s ease;
+    }
+
+    textarea, input, .btn {
+      border-radius: 10px;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      border: none;
+      padding: 12px;
+      font-size: 16px;
+    }
+
+    .btn-primary:hover {
+      background-color: #4f46e5;
+      transform: scale(1.03);
+    }
+
+    .response-container {
+      background-color: #374151;
+      padding: 25px;
+      margin-top: 30px;
+      border-left: 5px solid var(--primary);
+      border-radius: 14px;
+      color: var(--text-light);
+      white-space: pre-wrap;
+      animation: fadeIn 0.5s ease;
+    }
+
+    img {
+      margin-top: 20px;
+      border-radius: 12px;
+      display: none;
+    }
+
+    .form-label {
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    /* Loader Overlay */
+    .loader-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      display: none;
+    }
+
+    .loader {
+      border: 6px solid #e5e7eb;
+      border-top: 6px solid var(--primary);
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInLeft {
+      0% { opacity: 0; transform: translateX(-20px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes fadeUp {
+      0% { opacity: 0; transform: scale(0.98); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .lucide {
+      width: 18px;
+      height: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2><i data-lucide="sparkles"></i> Astra AI</h2>
+
+    <a id="astraAI" class="nav-link active" href="#"><i data-lucide="message-square-text"></i> Astra AI</a>
+    <a id="astraDeepthink" class="nav-link" href="#"><i data-lucide="mic"></i> Astra Deepthink</a>
+    <a id="astraEmbedding" class="nav-link" href="#"><i data-lucide="search"></i> Astra Embedding</a>
+  </div>
+
+  <div class="main-content">
+    <div class="card-box">
+      <h3 class="mb-4"><i data-lucide="bot"></i> Astra - Your AI Assistant</h3>
+
+      <div class="mb-4">
+        <label for="prompt" class="form-label">Prompt</label>
+        <textarea id="prompt" class="form-control" rows="6" placeholder="Ask anything..."></textarea>
+      </div>
+
+      <div class="mb-4">
+        <label for="file" class="form-label">Upload File (optional)</label>
+        <input type="file" id="file" class="form-control" />
+      </div>
+
+      <button id="submitBtn" class="btn btn-primary w-100" onclick="sendRequest()">
+        <i data-lucide="send"></i> Submit
+      </button>
+
+      <div id="responseContainer" class="response-container mt-4"></div>
+      <img id="generatedImage" class="img-fluid mt-3" />
+    </div>
+  </div>
+
+  <!-- Loader Overlay -->
+  <div id="loaderOverlay" class="loader-overlay">
+    <div class="loader"></div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    // Default endpoint (Astra AI)
+    let endpoint = "http://127.0.0.1:5000/generate";
+
+    // Event listeners for sidebar links
+    document.getElementById("astraAI").addEventListener("click", () => {
+      endpoint = "http://127.0.0.1:5000/generate";
+      setActiveLink("astraAI");
+    });
+
+    document.getElementById("astraDeepthink").addEventListener("click", () => {
+      endpoint = "http://127.0.0.1:5000/deepthink";
+      setActiveLink("astraDeepthink");
+    });
+
+    document.getElementById("astraEmbedding").addEventListener("click", () => {
+      endpoint = "http://127.0.0.1:5000/text-embedding";
+      setActiveLink("astraEmbedding");
+    });
+
+    // Function to update active link styling
+    function setActiveLink(activeId) {
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+      });
+      document.getElementById(activeId).classList.add('active');
+    }
+
+    async function sendRequest() {
+      const prompt = document.getElementById("prompt").value.trim();
+      const fileInput = document.getElementById("file");
+      const responseContainer = document.getElementById("responseContainer");
+      const imageElem = document.getElementById("generatedImage");
+      const loaderOverlay = document.getElementById("loaderOverlay");
+      const submitBtn = document.getElementById("submitBtn");
+
+      if (!prompt) {
+        alert("Please enter a prompt.");
+        return;
+      }
+
+      let formData = new FormData();
+      formData.append("prompt", prompt);
+      if (fileInput.files.length > 0) {
+        formData.append("file", fileInput.files[0]);
+      }
+
+      loaderOverlay.style.display = "flex";
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.intent === "image" && data.result) {
+          imageElem.src = `data:image/png;base64,${data.result}`;
+          imageElem.style.display = "block";
+          responseContainer.innerHTML = "";
+        } else {
+          imageElem.style.display = "none";
+
+          if (data.intent === "text-embedding") {
+            responseContainer.innerHTML = `<pre>${JSON.stringify(data.result, null, 2)}</pre>`;
+          } else {
+            responseContainer.innerHTML = marked.parse(data.result || "No response.");
+          }
+        }
+      } catch (error) {
+        responseContainer.innerHTML = `<span class="text-danger">Error: ${error.message}</span>`;
+      } finally {
+        loaderOverlay.style.display = "none";
+        submitBtn.disabled = false;
+        lucide.createIcons();
+      }
+    }
+  </script>
+</body>
+</html>
